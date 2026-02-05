@@ -1,0 +1,17 @@
+{
+  "name": "Water Tracker",
+  "short_name": "Water",
+  "description": "Houd bij hoeveel water je drinkt",
+  "start_url": "/",
+  "display": "standalone",
+  "background_color": "#0a1a1f",
+  "theme_color": "#0a1a1f",
+  "icons": [
+    {
+      "src": "data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 180 180'><rect width='180' height='180' fill='%230a1a1f'/><g transform='translate(30,25)'><ellipse cx='60' cy='120' rx='45' ry='15' fill='%2340918c' opacity='0.3'/><path d='M20 50 L28 110 C28 120 42 130 60 130 C78 130 92 120 92 110 L100 50 Z' fill='%2364b896'/><ellipse cx='60' cy='50' rx='40' ry='12' fill='%2388d4b8'/><path d='M45 42 C38 32 42 18 55 22 C60 24 55 38 45 42 Z' fill='%232a6860'/><path d='M75 38 C82 28 78 14 65 18 C60 20 65 34 75 38 Z' fill='%232a6860'/><path d='M60 35 C60 20 52 8 60 2 C68 8 60 20 60 35 Z' fill='%232a6860'/><path d='M100 58 C115 58 125 75 118 95 C112 105 100 98 100 88' stroke='%2388d4b8' stroke-width='8' fill='none' stroke-linecap='round'/></g></svg>",
+      "sizes": "180x180",
+      "type": "image/svg+xml",
+      "purpose": "any"
+    }
+  ]
+}

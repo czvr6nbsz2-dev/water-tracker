@@ -1,0 +1,658 @@
+<!DOCTYPE html>
+<html lang="nl">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=no">
+  <meta name="apple-mobile-web-app-capable" content="yes">
+  <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+  <link rel="apple-touch-icon" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 180 180'><rect width='180' height='180' fill='%230a1a1f'/><g transform='translate(30,25)'><ellipse cx='60' cy='120' rx='45' ry='15' fill='%2340918c' opacity='0.3'/><path d='M20 50 L28 110 C28 120 42 130 60 130 C78 130 92 120 92 110 L100 50 Z' fill='%2364b896'/><ellipse cx='60' cy='50' rx='40' ry='12' fill='%2388d4b8'/><path d='M45 42 C38 32 42 18 55 22 C60 24 55 38 45 42 Z' fill='%232a6860'/><path d='M75 38 C82 28 78 14 65 18 C60 20 65 34 75 38 Z' fill='%232a6860'/><path d='M60 35 C60 20 52 8 60 2 C68 8 60 20 60 35 Z' fill='%232a6860'/><path d='M100 58 C115 58 125 75 118 95 C112 105 100 98 100 88' stroke='%2388d4b8' stroke-width='8' fill='none' stroke-linecap='round'/></g></svg>">
+  <meta name="apple-mobile-web-app-title" content="Water">
+  <link rel="manifest" href="manifest.json">
+  <title>Water Tracker</title>
+  <style>
+    * {
+      margin: 0;
+      padding: 0;
+      box-sizing: border-box;
+      -webkit-tap-highlight-color: transparent;
+    }
+
+    body {
+      font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+      background: #0a1a1f;
+      color: #d0e8e8;
+      height: 100dvh;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      justify-content: center;
+      user-select: none;
+      overflow: hidden;
+      position: relative;
+      transition: background 0.6s;
+    }
+
+    /* Cool aqua/tea glow */
+    body::before {
+      content: '';
+      position: fixed;
+      inset: 0;
+      background:
+        radial-gradient(ellipse 80% 60% at 50% 40%, rgba(64, 145, 140, 0.2) 0%, transparent 70%),
+        radial-gradient(ellipse 50% 50% at 30% 70%, rgba(80, 160, 120, 0.12) 0%, transparent 60%),
+        radial-gradient(ellipse 40% 40% at 75% 80%, rgba(100, 180, 160, 0.1) 0%, transparent 50%);
+      pointer-events: none;
+      z-index: 0;
+      transition: opacity 0.6s;
+    }
+
+    body.complete::before {
+      background:
+        radial-gradient(ellipse 80% 60% at 50% 40%, rgba(100, 200, 150, 0.35) 0%, transparent 70%),
+        radial-gradient(ellipse 50% 50% at 30% 70%, rgba(120, 220, 160, 0.2) 0%, transparent 60%),
+        radial-gradient(ellipse 40% 40% at 75% 80%, rgba(140, 230, 180, 0.15) 0%, transparent 50%);
+    }
+
+    body.complete {
+      background: #0d2520;
+    }
+
+    /* Decorative tea leaves */
+    .leaf {
+      position: fixed;
+      opacity: 0.08;
+      z-index: 0;
+      pointer-events: none;
+    }
+
+    .leaf svg {
+      width: 100%;
+      height: 100%;
+    }
+
+    .leaf-1 { bottom: 3rem; left: 1.5rem; transform: rotate(-25deg); width: 28px; height: 40px; }
+    .leaf-2 { bottom: 5rem; left: 3.5rem; transform: rotate(15deg); width: 22px; height: 32px; opacity: 0.06; }
+    .leaf-3 { top: 4rem; right: 2rem; transform: rotate(40deg); width: 20px; height: 28px; opacity: 0.06; }
+    .leaf-4 { bottom: 2.5rem; right: 2.5rem; transform: rotate(-50deg); width: 26px; height: 38px; opacity: 0.07; }
+    .leaf-5 { top: 6rem; left: 2rem; transform: rotate(70deg); width: 18px; height: 26px; opacity: 0.05; }
+
+    .content {
+      position: relative;
+      z-index: 1;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+    }
+
+    .counter {
+      font-size: 1.2rem;
+      margin-bottom: 2rem;
+      text-align: center;
+      min-height: 1.8rem;
+      transition: opacity 0.2s;
+      color: #7ab8b0;
+    }
+
+    .count-number {
+      font-size: 3.5rem;
+      font-weight: 700;
+      display: block;
+      margin-bottom: 0.3rem;
+      color: #c8f0e8;
+      transition: color 0.4s;
+    }
+
+    body.almost .count-number {
+      color: #8fd4c0;
+    }
+
+    body.complete .count-number {
+      color: #60e8a0;
+    }
+
+    body.almost .counter,
+    body.complete .counter {
+      color: #60c8a0;
+    }
+
+    .add-btn {
+      width: 160px;
+      height: 160px;
+      border-radius: 50%;
+      border: 2px solid rgba(100, 180, 160, 0.3);
+      background: linear-gradient(145deg, #2a6860, #1a4540);
+      color: #c8f0e8;
+      font-size: 1.4rem;
+      cursor: pointer;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      justify-content: center;
+      gap: 0.3rem;
+      transition: transform 0.1s, box-shadow 0.2s, border-color 0.4s, background 0.4s;
+      box-shadow:
+        0 4px 24px rgba(64, 145, 140, 0.4),
+        0 0 60px rgba(64, 145, 140, 0.12),
+        inset 0 1px 0 rgba(255, 255, 255, 0.08);
+    }
+
+    .add-btn:active {
+      transform: scale(0.93);
+      box-shadow:
+        0 2px 12px rgba(64, 145, 140, 0.3),
+        inset 0 1px 0 rgba(255, 255, 255, 0.05);
+    }
+
+    body.complete .add-btn {
+      border-color: rgba(100, 232, 160, 0.4);
+      background: linear-gradient(145deg, #2a7860, #1a5545);
+      box-shadow:
+        0 4px 24px rgba(100, 200, 150, 0.4),
+        0 0 60px rgba(100, 200, 150, 0.15),
+        inset 0 1px 0 rgba(255, 255, 255, 0.08);
+    }
+
+    .add-btn .icon {
+      font-size: 2.2rem;
+      line-height: 1;
+    }
+
+    .add-btn .icon svg {
+      width: 2.2rem;
+      height: 2.2rem;
+    }
+
+    .progress-message {
+      margin-top: 2rem;
+      padding: 0.7rem 1.2rem;
+      border-radius: 8px;
+      background: rgba(64, 145, 140, 0.15);
+      border: 1px solid rgba(64, 145, 140, 0.35);
+      color: #7ab8b0;
+      font-size: 0.95rem;
+      text-align: center;
+      min-height: 3rem;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      opacity: 1;
+      transition: opacity 0.3s, background 0.3s, border-color 0.3s, color 0.3s;
+    }
+
+    .progress-message.complete {
+      background: rgba(100, 200, 150, 0.2);
+      border-color: rgba(100, 200, 150, 0.4);
+      color: #60e8a0;
+    }
+
+    /* Celebration overlay */
+    .celebration-overlay {
+      position: fixed;
+      inset: 0;
+      z-index: 3;
+      pointer-events: none;
+      opacity: 0;
+      transition: opacity 0.5s;
+    }
+
+    .celebration-overlay.visible {
+      opacity: 1;
+    }
+
+    /* Sparkle/bubble elements */
+    .bubble {
+      position: fixed;
+      width: 8px;
+      height: 8px;
+      border-radius: 50%;
+      background: rgba(100, 230, 180, 0.6);
+      opacity: 0;
+      z-index: 3;
+      pointer-events: none;
+    }
+
+    body.complete .bubble {
+      animation: float-up 3s ease-out infinite;
+    }
+
+    .bubble:nth-child(1) { left: 15%; animation-delay: 0s; }
+    .bubble:nth-child(2) { left: 30%; animation-delay: 0.5s; width: 6px; height: 6px; }
+    .bubble:nth-child(3) { left: 45%; animation-delay: 1s; }
+    .bubble:nth-child(4) { left: 60%; animation-delay: 1.5s; width: 10px; height: 10px; }
+    .bubble:nth-child(5) { left: 75%; animation-delay: 2s; width: 5px; height: 5px; }
+    .bubble:nth-child(6) { left: 85%; animation-delay: 2.5s; }
+
+    @keyframes float-up {
+      0% {
+        opacity: 0;
+        bottom: 0;
+        transform: translateX(0) scale(0.5);
+      }
+      10% {
+        opacity: 0.8;
+      }
+      90% {
+        opacity: 0.4;
+      }
+      100% {
+        opacity: 0;
+        bottom: 100%;
+        transform: translateX(20px) scale(1);
+      }
+    }
+
+    /* Celebration message */
+    .celebration-msg {
+      position: fixed;
+      bottom: 5rem;
+      left: 50%;
+      transform: translateX(-50%);
+      z-index: 4;
+      text-align: center;
+      opacity: 0;
+      transition: opacity 0.6s;
+      pointer-events: none;
+      white-space: nowrap;
+    }
+
+    .celebration-msg.visible {
+      opacity: 1;
+    }
+
+    .celebration-msg .emoji {
+      font-size: 1.8rem;
+      display: block;
+      margin-bottom: 0.4rem;
+    }
+
+    .celebration-msg .text {
+      font-size: 0.85rem;
+      color: #60c8a0;
+      letter-spacing: 0.03em;
+      line-height: 1.5;
+    }
+
+    /* Pulse animation for celebration */
+    @keyframes pulse {
+      0%, 100% { transform: scale(1); }
+      50% { transform: scale(1.05); }
+    }
+
+    .pulse {
+      animation: pulse 0.8s ease-in-out;
+    }
+
+    .settings-btn {
+      position: fixed;
+      top: 1rem;
+      right: 1rem;
+      background: none;
+      border: none;
+      color: #4a7872;
+      font-size: 1.4rem;
+      cursor: pointer;
+      padding: 0.5rem;
+      z-index: 5;
+    }
+
+    .settings-panel {
+      position: fixed;
+      top: 0;
+      left: 0;
+      width: 100%;
+      height: 100%;
+      background: rgba(5, 15, 18, 0.9);
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      opacity: 0;
+      pointer-events: none;
+      transition: opacity 0.25s;
+      z-index: 10;
+    }
+
+    .settings-panel.open {
+      opacity: 1;
+      pointer-events: auto;
+    }
+
+    .settings-card {
+      background: #142a28;
+      border: 1px solid rgba(100, 180, 160, 0.15);
+      border-radius: 12px;
+      padding: 1.5rem;
+      width: 280px;
+      text-align: center;
+    }
+
+    .settings-card h2 {
+      font-size: 1.1rem;
+      margin-bottom: 1rem;
+      font-weight: 500;
+      color: #7ab8b0;
+    }
+
+    .goal-control {
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      gap: 1rem;
+      margin-bottom: 1.5rem;
+    }
+
+    .goal-control button {
+      width: 44px;
+      height: 44px;
+      border-radius: 50%;
+      border: 1px solid #3a5854;
+      background: #1a3a36;
+      color: #7ab8b0;
+      font-size: 1.3rem;
+      cursor: pointer;
+    }
+
+    .goal-control span {
+      font-size: 2rem;
+      font-weight: 600;
+      min-width: 2.5rem;
+      color: #c8f0e8;
+    }
+
+    .close-btn {
+      background: #2a6860;
+      border: none;
+      color: #c8f0e8;
+      padding: 0.6rem 1.5rem;
+      border-radius: 8px;
+      font-size: 1rem;
+      cursor: pointer;
+    }
+
+    .reset-btn {
+      background: none;
+      border: 1px solid #3a5854;
+      color: #5a8880;
+      padding: 0.5rem 1rem;
+      border-radius: 6px;
+      font-size: 0.9rem;
+      cursor: pointer;
+      margin-top: 1rem;
+    }
+
+    .undo-btn {
+      position: fixed;
+      bottom: 2rem;
+      background: none;
+      border: 1px solid #2a4a46;
+      color: #5a8880;
+      padding: 0.5rem 1rem;
+      border-radius: 6px;
+      font-size: 0.85rem;
+      cursor: pointer;
+      opacity: 0;
+      transition: opacity 0.3s;
+      pointer-events: none;
+      z-index: 5;
+    }
+
+    .undo-btn.visible {
+      opacity: 1;
+      pointer-events: auto;
+    }
+  </style>
+</head>
+<body>
+  <!-- Decorative tea leaves -->
+  <div class="leaf leaf-1"><svg viewBox="0 0 24 36" fill="none"><path d="M12 2 C6 8 4 18 8 28 C10 32 14 34 18 30 C22 24 20 12 12 2 Z" fill="#64b896"/><path d="M12 2 C12 12 11 22 10 30" stroke="#0a1a1f" stroke-width="1" fill="none"/></svg></div>
+  <div class="leaf leaf-2"><svg viewBox="0 0 24 36" fill="none"><path d="M12 2 C6 8 4 18 8 28 C10 32 14 34 18 30 C22 24 20 12 12 2 Z" fill="#64b896"/><path d="M12 2 C12 12 11 22 10 30" stroke="#0a1a1f" stroke-width="1" fill="none"/></svg></div>
+  <div class="leaf leaf-3"><svg viewBox="0 0 24 36" fill="none"><path d="M12 2 C6 8 4 18 8 28 C10 32 14 34 18 30 C22 24 20 12 12 2 Z" fill="#64b896"/><path d="M12 2 C12 12 11 22 10 30" stroke="#0a1a1f" stroke-width="1" fill="none"/></svg></div>
+  <div class="leaf leaf-4"><svg viewBox="0 0 24 36" fill="none"><path d="M12 2 C6 8 4 18 8 28 C10 32 14 34 18 30 C22 24 20 12 12 2 Z" fill="#64b896"/><path d="M12 2 C12 12 11 22 10 30" stroke="#0a1a1f" stroke-width="1" fill="none"/></svg></div>
+  <div class="leaf leaf-5"><svg viewBox="0 0 24 36" fill="none"><path d="M12 2 C6 8 4 18 8 28 C10 32 14 34 18 30 C22 24 20 12 12 2 Z" fill="#64b896"/><path d="M12 2 C12 12 11 22 10 30" stroke="#0a1a1f" stroke-width="1" fill="none"/></svg></div>
+
+  <!-- Floating bubbles for celebration -->
+  <div class="bubble"></div>
+  <div class="bubble"></div>
+  <div class="bubble"></div>
+  <div class="bubble"></div>
+  <div class="bubble"></div>
+  <div class="bubble"></div>
+
+  <!-- Celebration message -->
+  <div class="celebration-msg" id="celebrationMsg">
+    <span class="emoji">&#127881;</span>
+    <span class="text" id="celebrationText"></span>
+  </div>
+
+  <button class="settings-btn" id="settingsBtn" aria-label="Instellingen">&#9881;</button>
+
+  <div class="content" id="content">
+    <div class="counter">
+      <span class="count-number" id="countNumber">nog 3</span>
+      <span id="counterText">Vul je fles!</span>
+    </div>
+
+    <button class="add-btn" id="addBtn">
+      <span class="icon">
+        <svg viewBox="0 0 36 36" fill="none">
+          <!-- Tea cup with leaf -->
+          <ellipse cx="18" cy="28" rx="10" ry="4" fill="currentColor" opacity="0.3"/>
+          <path d="M8 14 L10 26 C10 28 14 30 18 30 C22 30 26 28 26 26 L28 14 Z" fill="currentColor" opacity="0.8"/>
+          <ellipse cx="18" cy="14" rx="10" ry="3" fill="currentColor"/>
+          <!-- Tea leaves on top -->
+          <path d="M15 12 C13 10 14 7 17 8 C18 8.5 17 11 15 12 Z" fill="#2a6860"/>
+          <path d="M21 11 C23 9 22 6 19 7 C18 7.5 19 10 21 11 Z" fill="#2a6860"/>
+          <path d="M18 10 C18 7 16 5 18 4 C20 5 18 7 18 10 Z" fill="#2a6860"/>
+          <!-- Handle -->
+          <path d="M28 16 C32 16 34 20 32 24 C30 26 28 24 28 22" stroke="currentColor" stroke-width="2.5" fill="none"/>
+        </svg>
+      </span>
+      <span>Gevuld!</span>
+    </button>
+
+    <div class="progress-message" id="progressMessage">Drink genoeg water vandaag</div>
+  </div>
+
+  <button class="undo-btn" id="undoBtn">Ongedaan maken</button>
+
+  <div class="settings-panel" id="settingsPanel">
+    <div class="settings-card">
+      <h2>Dagdoel (flessen)</h2>
+      <div class="goal-control">
+        <button id="goalDown">&minus;</button>
+        <span id="goalValue">3</span>
+        <button id="goalUp">+</button>
+      </div>
+      <button class="close-btn" id="closeSettings">Sluiten</button>
+      <button class="reset-btn" id="resetBtn">Reset vandaag</button>
+    </div>
+  </div>
+
+  <script>
+    const STORAGE_KEY = 'water_tracker';
+
+    const CELEBRATION_MESSAGES = [
+      'Je hebt je doel gehaald!',
+      'Goed gehydrateerd!',
+      'Je lichaam dankt je!',
+      'Waterkampioen!',
+      'Blijf zo doorgaan!',
+      'Perfect gedaan vandaag!',
+    ];
+
+    const PROGRESS_MESSAGES = [
+      'Drink genoeg water vandaag',
+      'Goed bezig, blijf vullen!',
+      'Bijna daar!',
+      'Nog eentje!',
+    ];
+
+    function loadState() {
+      try {
+        return JSON.parse(localStorage.getItem(STORAGE_KEY)) || {};
+      } catch {
+        return {};
+      }
+    }
+
+    function saveState(state) {
+      localStorage.setItem(STORAGE_KEY, JSON.stringify(state));
+    }
+
+    function todayStr() {
+      return new Date().toISOString().slice(0, 10);
+    }
+
+    // Init
+    const state = loadState();
+    const today = todayStr();
+
+    if (state.date !== today) {
+      state.date = today;
+      state.count = 0;
+    }
+
+    if (!state.goal) state.goal = 3;
+    if (typeof state.count !== 'number') state.count = 0;
+
+    saveState(state);
+
+    // Elements
+    const countNumber = document.getElementById('countNumber');
+    const counterText = document.getElementById('counterText');
+    const progressMessage = document.getElementById('progressMessage');
+    const addBtn = document.getElementById('addBtn');
+    const undoBtn = document.getElementById('undoBtn');
+    const settingsBtn = document.getElementById('settingsBtn');
+    const settingsPanel = document.getElementById('settingsPanel');
+    const goalValue = document.getElementById('goalValue');
+    const goalDown = document.getElementById('goalDown');
+    const goalUp = document.getElementById('goalUp');
+    const closeSettings = document.getElementById('closeSettings');
+    const resetBtn = document.getElementById('resetBtn');
+    const celebrationMsg = document.getElementById('celebrationMsg');
+    const celebrationText = document.getElementById('celebrationText');
+    const content = document.getElementById('content');
+
+    let undoTimer = null;
+
+    function pickCelebrationMessage() {
+      return CELEBRATION_MESSAGES[Math.floor(Math.random() * CELEBRATION_MESSAGES.length)];
+    }
+
+    function render() {
+      const n = state.count;
+      const remaining = state.goal - n;
+
+      // Update display
+      if (remaining > 0) {
+        countNumber.textContent = `nog ${remaining}`;
+        counterText.textContent = remaining === 1 ? 'Vul je fles nog 1x!' : 'Vul je fles!';
+      } else {
+        countNumber.textContent = 'Klaar!';
+        counterText.textContent = `${n} ${n === 1 ? 'fles' : 'flessen'} vandaag`;
+      }
+
+      // Progress message
+      if (remaining <= 0) {
+        progressMessage.textContent = pickCelebrationMessage();
+        progressMessage.classList.add('complete');
+      } else if (remaining === 1) {
+        progressMessage.textContent = 'Nog eentje!';
+        progressMessage.classList.remove('complete');
+      } else if (n > 0) {
+        progressMessage.textContent = 'Goed bezig, blijf vullen!';
+        progressMessage.classList.remove('complete');
+      } else {
+        progressMessage.textContent = 'Drink genoeg water vandaag';
+        progressMessage.classList.remove('complete');
+      }
+
+      // Visual states
+      document.body.classList.remove('almost', 'complete');
+      celebrationMsg.classList.remove('visible');
+
+      if (remaining <= 0) {
+        // Goal reached!
+        document.body.classList.add('complete');
+        celebrationMsg.classList.add('visible');
+        celebrationText.textContent = pickCelebrationMessage();
+      } else if (remaining === 1) {
+        document.body.classList.add('almost');
+      }
+
+      goalValue.textContent = state.goal;
+    }
+
+    function triggerPulse() {
+      content.classList.remove('pulse');
+      void content.offsetWidth; // force reflow
+      content.classList.add('pulse');
+    }
+
+    function showUndo() {
+      clearTimeout(undoTimer);
+      undoBtn.classList.add('visible');
+      undoTimer = setTimeout(() => undoBtn.classList.remove('visible'), 4000);
+    }
+
+    addBtn.addEventListener('click', () => {
+      // Day check on every tap
+      const now = todayStr();
+      if (state.date !== now) {
+        state.date = now;
+        state.count = 0;
+      }
+
+      state.count++;
+      saveState(state);
+      render();
+      showUndo();
+
+      // Pulse on goal completion
+      if (state.count === state.goal) {
+        triggerPulse();
+      }
+    });
+
+    undoBtn.addEventListener('click', () => {
+      if (state.count > 0) {
+        state.count--;
+        saveState(state);
+        render();
+        undoBtn.classList.remove('visible');
+        clearTimeout(undoTimer);
+      }
+    });
+
+    // Settings
+    settingsBtn.addEventListener('click', () => settingsPanel.classList.add('open'));
+    closeSettings.addEventListener('click', () => settingsPanel.classList.remove('open'));
+    settingsPanel.addEventListener('click', (e) => {
+      if (e.target === settingsPanel) settingsPanel.classList.remove('open');
+    });
+
+    goalUp.addEventListener('click', () => {
+      state.goal++;
+      saveState(state);
+      render();
+    });
+
+    goalDown.addEventListener('click', () => {
+      if (state.goal > 1) {
+        state.goal--;
+        saveState(state);
+        render();
+      }
+    });
+
+    resetBtn.addEventListener('click', () => {
+      state.count = 0;
+      saveState(state);
+      render();
+      settingsPanel.classList.remove('open');
+    });
+
+    render();
+  </script>
+</body>
+</html>
