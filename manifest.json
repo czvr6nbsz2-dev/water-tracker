@@ -2,13 +2,13 @@
   "name": "Water Tracker",
   "short_name": "Water",
   "description": "Houd bij hoeveel water je drinkt",
-  "start_url": "/",
+  "start_url": "./index.html",
   "display": "standalone",
   "background_color": "#0a1a1f",
   "theme_color": "#0a1a1f",
   "icons": [
     {
-      "src": "icon.png",
+      "src": "./icon.png",
       "sizes": "180x180",
       "type": "image/png",
       "purpose": "any"
